@@ -95,6 +95,33 @@ class disk_t : public device_t
   int fd;
 };
 
+class char_t : public device_t
+{
+ public:
+  char_t(const char *fn);
+  const char* identity() { return id.c_str(); }
+  void tick();
+
+  static const uint16_t CHAR_POLLIN  = 0x0001;
+  static const uint16_t CHAR_POLLOUT = 0x0004;
+  static const uint16_t CHAR_POLLHUP = 0x0010;
+
+ private:
+  struct request_t
+  {
+    uint64_t addr;
+    uint64_t size;
+    uint64_t tag;
+  };
+
+  void handle_read(command_t cmd);
+  void handle_write(command_t cmd);
+  void handle_poll(command_t cmd);
+
+  std::string id;
+  int servfd, fd;
+};
+
 class null_device_t : public device_t
 {
  public:
