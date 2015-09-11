@@ -103,8 +103,8 @@ class char_t : public device_t
   void tick();
 
   static const uint16_t CHAR_POLLIN  = 0x0001;
-  static const uint16_t CHAR_POLLOUT = 0x0004;
-  static const uint16_t CHAR_POLLHUP = 0x0010;
+  static const uint16_t CHAR_POLLOUT = 0x0002;
+  static const uint16_t CHAR_POLLHUP = 0x0004;
 
  private:
   struct request_t

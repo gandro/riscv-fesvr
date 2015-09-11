@@ -250,8 +250,6 @@ void char_t::handle_poll(command_t cmd)
     pfd.events |= POLLIN;
   if (events & char_t::CHAR_POLLOUT)
     pfd.events |= POLLOUT;
-  if (events & char_t::CHAR_POLLHUP)
-    pfd.events |= POLLHUP;
 
   int rv = ::poll(&pfd, 1, 0);
   switch (rv) {
@@ -282,7 +280,7 @@ void char_t::tick()
     socklen_t socklen = sizeof(remote);
     fd = ::accept(servfd, (struct sockaddr *)&remote, &socklen);
     if (fd == -1) {
-      if (errno != EAGAIN)
+      if (errno != EAGAIN && errno != EWOULDBLOCK)
         throw std::system_error(errno, std::system_category(), "accept() failed");
     }
   }
