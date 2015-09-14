@@ -99,6 +99,7 @@ class char_t : public device_t
 {
  public:
   char_t(const char *fn);
+  ~char_t();
   const char* identity() { return id.c_str(); }
   void tick();
 
@@ -120,6 +121,22 @@ class char_t : public device_t
 
   std::string id;
   int servfd, fd;
+};
+
+class ether_t : public device_t
+{
+ public:
+  ether_t(const char *fn);
+  ~ether_t();
+  const char* identity() { return id.c_str(); }
+  void tick();
+
+ private:
+  void handle_read(command_t cmd);
+  void handle_write(command_t cmd);
+
+  std::string id;
+  int fd;
 };
 
 class null_device_t : public device_t

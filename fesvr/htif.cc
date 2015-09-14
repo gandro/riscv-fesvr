@@ -82,6 +82,8 @@ htif_t::htif_t(const std::vector<std::string>& args)
       dynamic_devices.push_back(new disk_t(arg.c_str() + strlen("+disk=")));
     else if (arg.find("+char=") == 0)
       dynamic_devices.push_back(new char_t(arg.c_str() + strlen("+char=")));
+    else if (arg.find("+ether=") == 0)
+      dynamic_devices.push_back(new ether_t(arg.c_str() + strlen("+ether=")));
     else if (arg.find("+signature=") == 0)
       sig_file = arg.c_str() + strlen("+signature=");
     else if (arg.find("+chroot=") == 0)

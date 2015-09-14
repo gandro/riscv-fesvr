@@ -10,10 +10,15 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
+
+#include <linux/if.h>
+#include <linux/if_tun.h>
+
 using namespace std::placeholders;
 
 device_t::device_t()
@@ -170,6 +175,13 @@ char_t::char_t(const char *fn)
   id = std::string("char unix=") + std::string(fn);
 }
 
+char_t::~char_t()
+{
+  if (fd != -1)
+    close(fd);
+  close(servfd);
+}
+
 void char_t::handle_read(command_t cmd)
 {
   request_t req;
@@ -283,6 +295,66 @@ void char_t::tick()
       if (errno != EAGAIN && errno != EWOULDBLOCK)
         throw std::system_error(errno, std::system_category(), "accept() failed");
     }
+  }
+}
+
+/*
+ # ip tuntap add dev tap0 mode tap user gandro group users
+ # ip link set tap0 up
+ # ip addr add 10.0.0.1/24 dev tap0
+ $ spike +ether=tap0 main.elf
+ 
+*/
+ether_t::ether_t(const char *fn)
+{
+  std::string device = std::string(fn);
+
+  register_command(0, std::bind(&ether_t::handle_read, this, _1), "read");
+  register_command(1, std::bind(&ether_t::handle_write, this, _1), "write");
+
+  fd = open("/dev/net/tun", O_RDWR|O_NONBLOCK);
+  if (fd == -1)
+    throw std::system_error(errno, std::system_category(), 
+      "failed to connect to tun driver");
+
+  struct ifreq ifr;
+  memset(&ifr, 0, sizeof(ifr));
+  ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
+  strncpy(ifr.ifr_name, fn, IFNAMSIZ);
+
+  if (ioctl(fd, TUNSETIFF, &ifr) == -1) {
+    close(fd);
+    throw std::system_error(errno, std::system_category(),
+      "failed to connect to tap device " + device);
+  }
+
+  id = "ether dev=" + device;
+}
+
+ether_t::~ether_t()
+{
+  close(fd);
+}
+
+void ether_t::handle_read(command_t cmd)
+{
+
+}
+
+void ether_t::handle_write(command_t cmd)
+{
+
+}
+
+void ether_t::tick()
+{
+  uint8_t buf[9018]; /* jumbo frame max len, TODO allocate on heap? */
+  ssize_t n = read(fd, buf, sizeof(buf));
+  if (n == -1) {
+    if (errno != EAGAIN && errno != EWOULDBLOCK)
+      throw std::system_error(errno, std::system_category(), "accept() failed");
+  } else {
+    std::cout << "read " << n <<" bytes.\n";
   }
 }
 
